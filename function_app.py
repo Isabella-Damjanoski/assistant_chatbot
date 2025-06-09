@@ -1,18 +1,49 @@
 import azure.functions as func
-import logging
-import json  
+import openai
+import json
+import os
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
+
+# Initialize OpenAI client
+client = openai.AzureOpenAI(
+    api_version=os.getenv("AZURE_OPENAI_API_VERSION"),
+    azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
+    api_key=os.getenv("AZURE_OPENAI_KEY"),
+)
 
 app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 
-@app.route(route="assistant_chatbot")
-def assistant_chatbot(req: func.HttpRequest) -> func.HttpResponse:
+@app.route(route="chatbot")
+def chatbot(req: func.HttpRequest) -> func.HttpResponse:
     try:
+        # Extract user input from request body
         req_body = req.get_json()
         user_input = req_body.get("text", "No input provided")
-    except ValueError:  # Fix indentation issue
-        user_input = "Invalid input"
+
+        # Define prompt for AI
+        messages = [
+            {"role": "system", "content": "You are a helpful AI assistant."},
+            {"role": "user", "content": user_input},
+        ]
+
+        # Call OpenAI API
+        response = client.chat.completions.create(
+            messages=messages,
+            max_tokens=500,
+            temperature=0.7,
+            top_p=1.0,
+            model=os.getenv("AZURE_DEPLOYMENT_NAME"),
+        )
+
+        ai_response = response.choices[0].message.content.strip()
+
+    except Exception as e:
+        ai_response = json.dumps({"error": f"An error occurred: {str(e)}"})
 
     return func.HttpResponse(
-        json.dumps({"response": user_input}),
-        mimetype="application/json"  # Correct mimetype
+        json.dumps({"response": ai_response}),
+        mimetype="application/json"
     )
