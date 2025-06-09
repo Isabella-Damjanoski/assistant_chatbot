@@ -19,11 +19,10 @@ app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 @app.route(route="chatbot")
 def chatbot(req: func.HttpRequest) -> func.HttpResponse:
     try:
-        # Extract user input from request body
-        req_body = req.get_json()
-        user_input = req_body.get("text", "No input provided")
+        # Read raw text from request body
+        user_input = req.get_body().decode("utf-8").strip()
 
-        # Define prompt for AI
+        # Define AI prompt
         messages = [
             {"role": "system", "content": "You are a helpful AI assistant."},
             {"role": "user", "content": user_input},
