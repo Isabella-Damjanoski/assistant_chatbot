@@ -31,7 +31,7 @@ def chatbot(req: func.HttpRequest) -> func.HttpResponse:
         # Call OpenAI API
         response = client.chat.completions.create(
             messages=messages,
-            max_tokens=500,
+            max_completion_tokens=500,
             temperature=0.7,
             top_p=1.0,
             model=os.getenv("AZURE_DEPLOYMENT_NAME"),
